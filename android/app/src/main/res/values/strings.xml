@@ -1,0 +1,3 @@
+<resources>
+    <string name="probe_description">Observa mensagens visíveis nos aplicativos selecionados após sua ativação no Argos. Cifra os registros no aparelho e sincroniza com seu servidor. Os adaptadores são experimentais. Pause a qualquer momento no Argos.</string>
+</resources>

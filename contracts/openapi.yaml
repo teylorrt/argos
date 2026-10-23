@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Argos API
+  version: 0.2.0
+  description: Arquivo pessoal. Conteúdo cifrado em JWE RSA-OAEP-256/A256GCM; observação não é confirmação oficial de envio.
+servers:
+  - url: http://localhost:3000
+security:
+  - ownerBearer: []
+paths:
+  /health:
+    get:
+      security: []
+      responses:
+        '200': { description: PostgreSQL disponível }
+  /v1/session:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties: { token: { type: string } }
+      responses:
+        '200': { description: Cookie HttpOnly SameSite=Strict e token CSRF; sessão de 8 horas }
+        '401': { description: Proprietário não autenticado }
+    get:
+      responses:
+        '200': { description: Sessão e token CSRF atuais }
+    delete:
+      responses:
+        '200': { description: Sessão encerrada; exige X-CSRF-Token quando autenticada por cookie }
+  /v1/enrollments:
+    post:
+      responses:
+        '200':
+          description: Código de pareamento de uso único, válido por 15 minutos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { code: { type: string }, expiresAt: { type: string, format: date-time } }
+  /v1/devices/register:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, installationId, label]
+              additionalProperties: false
+              properties: { code: { type: string }, installationId: { type: string, format: uuid }, label: { type: string, maxLength: 150 } }
+      responses:
+        '200': { description: deviceId, token opaco com validade de 365 dias e recipientKey JWK público }
+        '409': { description: Pareamento consumido/expirado; novo código recupera a mesma instalação e invalida credencial anterior }
+  /v1/devices:
+    get:
+      responses:
+        '200': { description: Aparelhos sem hash ou token de credencial }
+  /v1/devices/me:
+    get:
+      security: [{ deviceBearer: [] }]
+      responses:
+        '200': { description: Vínculo atual e JWK ativo }
+        '401': { description: Credencial inválida/revogada/expirada }
+  /v1/devices/me/revoke:
+    post:
+      security: [{ deviceBearer: [] }]
+      responses:
+        '200': { description: Auto-revogação do aparelho autenticado }
+  /v1/devices/{id}/revoke:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      responses:
+        '200': { description: Credencial revogada }
+  /v1/crypto/recipient-key:
+    get:
+      security: [{ deviceBearer: [] }]
+      responses:
+        '200': { description: JWK RSA público ativo com kid }
+  /v1/observations/batch:
+    post:
+      security: [{ deviceBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              additionalProperties: false
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [eventId, envelope]
+                    properties:
+                      eventId: { type: string, format: uuid }
+                      envelope: { type: string, maxLength: 200000 }
+      responses:
+        '200':
+          description: Confirmações após commit, por item; lote limitado a 512 KiB
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        eventId: { type: string, format: uuid }
+                        status: { enum: [accepted, already_received, rejected_permanent, retryable] }
+                        code: { enum: [EVENT_CONFLICT, IDENTITY_MISMATCH, INVALID_ENVELOPE, UNKNOWN_KEY, STORAGE_UNAVAILABLE] }
+        '401': { description: Aparelho não autorizado }
+        '413': { description: Lote excede limite }
+  /v1/observations:
+    get:
+      parameters:
+        - { name: app, in: query, schema: { enum: [whatsapp, instagram, messenger] } }
+        - { name: source, in: query, schema: { enum: [accessibility, notification] } }
+        - { name: simulated, in: query, schema: { enum: ['true', 'false'] } }
+        - { name: deviceId, in: query, schema: { type: string, format: uuid } }
+        - { name: before, in: query, schema: { type: string, pattern: '^\d{1,19}$' } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { description: items decifrados e nextCursor; filtros de data usam observedAt; ordem de recebimento decrescente }
+  /v1/observations/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, pattern: '^\d{1,19}$' } }]
+    get:
+      responses:
+        '200': { description: Observação decifrada conforme observation.schema.json }
+        '404': { description: Registro não encontrado }
+    delete:
+      responses:
+        '200': { description: Registro excluído; backups seguem janela própria }
+components:
+  securitySchemes:
+    ownerBearer: { type: http, scheme: bearer, description: OWNER_TOKEN; painel usa cookie de sessão em vez de guardar esse token no navegador }
+    deviceBearer: { type: http, scheme: bearer, description: Token individual do aparelho, sem acesso à leitura }

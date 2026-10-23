@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Argos · Mensagens</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+  <header><a class="brand" href="/">◉ ARGOS</a><span>Seu arquivo de mensagens</span><button id="logout" hidden>Sair</button></header>
+  <main>
+    <section id="login" class="login panel"><span class="eyebrow">ARQUIVO PESSOAL</span><h1>Uma conversa.<br>Todo o contexto.</h1><p>Leia as observações dos seus aplicativos em um só lugar.</p><form id="login-form"><label>Chave do proprietário<input id="token" type="password" required autocomplete="current-password"></label><button class="primary">Entrar no arquivo →</button></form></section>
+    <section id="workspace" hidden>
+      <div class="heading"><div><span class="eyebrow">MENSAGENS OBSERVADAS</span><h1>Caixa de entrada</h1><p>Horários, participantes e fonte preservados em cada registro.</p></div><button id="refresh">Atualizar ↻</button></div>
+      <div class="toolbar panel">
+        <label>Aplicativo<select id="app"><option value="">Todos os aplicativos</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="messenger">Messenger</option></select></label>
+        <label>Fonte<select id="source"><option value="">Todas as fontes</option><option value="accessibility">Acessibilidade</option><option value="notification">Notificação</option></select></label>
+        <label>Dados<select id="simulated"><option value="">Reais e simulados</option><option value="false">Somente reais</option><option value="true">Somente simulados</option></select></label>
+        <label>De<input id="from" type="datetime-local"></label><label>Até<input id="to" type="datetime-local"></label>
+        <label>Buscar nesta página<input id="search" type="search" placeholder="Texto ou participante"></label>
+      </div>
+      <div class="content"><section><div id="summary" class="summary"></div><div id="messages" aria-live="polite"></div><button id="more" hidden>Carregar mais</button></section>
+        <aside><section class="panel"><h2>Conectar aparelho</h2><p>Crie um código, copie e cole no Argos no Android. Ele expira em 15 minutos.</p><button id="pair" class="primary">Criar pareamento</button><output id="pair-code"></output></section><section class="panel"><h2>Aparelhos</h2><div id="devices"></div></section><section class="note"><strong>Sobre os registros</strong><p>Acessibilidade observa a tela; notificações refletem o que o aplicativo publicou. Fontes diferentes permanecem separadas. Campos desconhecidos não são inventados.</p></section></aside>
+      </div>
+    </section>
+    <p id="error" role="alert"></p>
+  </main>
+  <dialog id="detail"><button id="close-detail">Fechar ×</button><h2>Detalhes da observação</h2><pre id="detail-json"></pre><button id="delete" class="danger">Excluir registro</button></dialog>
+  <footer>ARGOS · Arquivo pessoal · Os horários de envio não são confirmações oficiais da plataforma.</footer>
+</body></html>

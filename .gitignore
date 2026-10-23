@@ -1,0 +1,15 @@
+.gradle/
+.idea/
+**/build/
+local.properties
+node_modules/
+dist/
+.env
+*.jks
+*.keystore
+.tools/
+evidence/
+server/data/
+infra/backups/
+.env.*
+!.env.example
